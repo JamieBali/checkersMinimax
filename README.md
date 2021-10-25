@@ -1,2 +1,3 @@
-# checkersMinimax
-UoS Coursework Task. Checkers agents - containing a playable checkers game and intelligent agent that makes use of the minimax algorithm with alpha-beta pruning
+# Constructing a Checkers Computer with the Minimax Algorithm and Alpha-Beta Pruning
+
+_Abstract:_ In this short paper, we will discuss the techniques involved in the construction of a
