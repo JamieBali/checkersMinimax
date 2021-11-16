@@ -6,24 +6,10 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 20)
 
 class Tile:
-    def __init__(self, text,  pos, font, bg="black", feedback=""):
-        self.x, self.y = pos
-        self.font = pygame.font.SysFont("Arial", font)
-        if feedback == "":
-            self.feedback = "text"
-        else:
-            self.feedback = feedback
-        self.change_text(text, bg)
+    def __init__(self, position, piece):
+        self.piece = 0       # 0 is empty, 1 for red, 2 for black
+        
 
-    def show(self):
-        screen.blit(button1.surface, (self.x, self.y))
- 
-    def click(self, event):
-        x, y = pygame.mouse.get_pos()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
-                if self.rect.collidepoint(x, y):
-                    self.change_text(self.feedback, bg="red")
 
 ###
 #
@@ -55,14 +41,39 @@ class Agent:
     #
     ###
     def getPossibleMoves(board, player):
+        moves = []
+
+        # processing here
+
+        return moves
 
     ###
     #
-    # The move function will take the board state and run minimax on it to generate an optimal move 
+    # The move function will take the board state and run minimax on it to generate an optimal move.
     #
     ###
     def move(self, boardState):
+        optimal = (0,0)
 
+        # 
+
+        return optimal
+
+    ###
+    #
+    # Rather than writing a seperate system to find hints, we can more easily rotate the board 180 degrees
+    # and put the rotated board through the regular agent. We then need to remember to rotate the board back
+    # to normal before returning the move.
+    #
+    ###
+    def hint(self, boardState):
+        suggestion = "temp to remove error markers"
+
+        # rotatedBoard = rotate(boardState, 180)
+        # suggestion = move(self, rotatedBoard)
+        # suggestion = rotate(suggestion, 180)
+
+        return suggestion
  
 ###
 #
@@ -72,11 +83,20 @@ class Agent:
 ###
 if __name__ == '__main__':
     
+    # in order to reduce the size of the grid
+    board = []
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-            button1.click(event)
-        button1.show()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]: # confirm that it is a left click.
+                    x, y = pygame.mouse.get_pos()
+                    print(str(x) + " " + str(y))
+
+                    # get which tile was clicked
+                    # highlight possible moves
+
         clock.tick(30)
         pygame.display.update()
