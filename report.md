@@ -4,7 +4,7 @@ _Abstract:_ In this short paper, we will discuss the techniques involved in the 
 
 ## Introduction
 Checkers is a game in which two players compete to capture the opponent's game tiles, with the victory condition of being the last player standing. We have been tasked with the creation of an intelligent agent with the capacity to play a game of Checkers against a human opponent.
-Our agent will use a minimax algorithm with alpha-beta pruning for increased efficiency. This will generate an optimal move for a current board state, and will allow the checkers computer to think multiple moves in advance. We have been asked to introduce variable difficulty into our checkers agent, and we can do this by varying the amount of advance steps the algorithm will process. Thinking further ahead will make the processing take longer, but will allow the agent 
+Our agent will use a minimax algorithm with alpha-beta pruning for increased efficiency. This will generate an optimal move for a current board state, and will allow the checkers computer to think multiple moves in advance. We have been asked to introduce variable difficulty into our checkers agent, and we can do this by varying the amount of advance steps the algorithm will process. Thinking further ahead will make the processing take longer, but will allow the agent to make more meaningful moves.
 
 ## Functionality
 
