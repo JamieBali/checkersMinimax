@@ -1,11 +1,12 @@
-import pygame
+import pygame as squidgame
 import math
+import numpy as np
 
-pygame.init()
-screen = pygame.display.set_mode((400,400))
-clock = pygame.time.Clock()
-font = pygame.font.SysFont("Arial", 20)
-fontB = pygame.font.SysFont("Arial", 20, bold=True)
+squidgame.init()
+screen = squidgame.display.set_mode((400,400))
+clock = squidgame.time.Clock()
+font = squidgame.font.SysFont("Arial", 20)
+fontB = squidgame.font.SysFont("Arial", 20, bold=True)
 
 ###
 #
@@ -18,14 +19,21 @@ fontB = pygame.font.SysFont("Arial", 20, bold=True)
 #
 ###
 class Agent:
-    def __init__(self, difficulty):
-        self.depth = difficulty
+    def __init__(self, difficulty = 2):
+        self.maxDepth = difficulty + 1
 
-    def getBoardValue(board):
+    def getBoardValue(self, board):
         value = 0
-        
-        # processing here
-        
+        for i in range (0,8):
+            for j in range (0,8):
+                if board[i][j] == 1:
+                    value -= (8-i)      # the regular pieces are worth more, if they are closer to becoming kings
+                elif board[i][j] == 2:
+                    value += (i+1)      # same as above, but for the max agent's pieces
+                elif board[i][j] == 4:
+                    value -= 15         # 4 is an enemy king. The position is irrelevant, only that it is a king
+                elif board[i][j] == 5:
+                    value += 18         # 5 is an ally king, meaning we want as many of these as possible.
         return value
 
     ###
@@ -35,25 +43,231 @@ class Agent:
     # perform a second run to get regular moves. This is slightly less efficient time-wise, but uses less
     # storage space.
     #
+    # For ease of processing, we will return the board state after each move, as opposed to the move itself.
+    #
     ###
-    def getPossibleMoves(board, player):
+    def getPossibleMoves(self, board, player):
         moves = []
+        if player == 1: # player 1 is the human player.
+            captures = False
+            for i in range(0,8):             # player 1 captures
+                for j in range(0,8):
+                    if board[i][j] == 4 or board[i][j] == 1: # king or regular
+                        if i > 1 and j < 6:
+                            if (board[i-1][j+1] == 1 or board[i-1][j+1] == 4) and board[i-2][j+2] == 0:
+                                newBoardState = np.copy(board)
+                                if newBoardState[i-1][j+1] == 5:
+                                    newBoardState[i-2][j+2] == 4
+                                else:
+                                    newBoardState[i-2][j+2] = board[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i-1][j+1] = 0
+                                if i-2 == 0:
+                                    newBoardState[i-2][j+2] = 4
+                                captures = True
+                                moves.append(newBoardState)
+                        if i > 1 and j > 1:
+                            if (board[i-1][j-1] == 1 or board[i-1][j-1] == 4) and board[i-2][j-2] == 0:
+                                newBoardState = np.copy(board)
+                                if newBoardState[i-1][j-1] == 5:
+                                    newBoardState[i-2][j-2] == 4
+                                else:
+                                    newBoardState[i-2][j-2] = board[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i-1][j-1] = 0
+                                if i-2 == 0:
+                                    newBoardState[i-2][j-2] = 4
+                                captures = True
+                                moves.append(newBoardState)
+                    if board[i][j] == 4: # king only
+                        if i < 6 and j < 6:
+                            if (board[i+1][j+1] == 2 or board[i+1][j+1] == 4) and board[i+2][j+2] == 0:
+                                newBoardState = np.copy(board)
+                                if newBoardState[i+1][j+1] == 5:
+                                    newBoardState[i+2][j+2] == 4
+                                else:
+                                    newBoardState[i+2][j+2] = board[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i+1][j+1] = 0
+                                captures = True
+                                moves.append(newBoardState)
+                        if i < 6 and j > 1:
+                            if (board[i+1][j-1] == 2 or board[i+1][j-1] == 4) and board[i+2][j-2] == 0:
+                                newBoardState = np.copy(board)
+                                if newBoardState[i+1][j-1] == 5:
+                                    newBoardState[i+2][j-2] == 4
+                                else:
+                                    newBoardState[i+2][j-2] = board[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i+1][j-1] = 0
+                                captures = True
+                                moves.append(newBoardState)
+            if captures == False:            # player 1 non captures
+                for i in range(0,8):
+                    for j in range(0,8):
+                        if board[i][j] == 4 or board[i][j] == 1: # king or regular
+                            if i > 0 and j < 7:
+                                if board[i-1][j+1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i-1][j+1] = newBoardState[i][j]
+                                    newBoardState[i][j] = 0
+                                    moves.append(newBoardState)
+                            if i > 0 and j > 0:
+                                if board[i-1][j-1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i-1][j-1] = newBoardState[i][j]
+                                    newBoardState[i][j] = 0
+                                    moves.append(newBoardState)
+                        if board[i][j] == 4: # king only
+                            if i < 7 and j < 7:
+                                if board[i+1][j+1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i+1][j+1] = newBoardState[i][j]
+                                    newBoardState[i][j] = 0
+                                    moves.append(newBoardState)
+                            if i < 7 and j > 0:
+                                if board[i+1][j-1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i+1][j-1] = newBoardState[i][j]
+                                    newBoardState[i][j] = 0
+                                    moves.append(newBoardState)
 
-        # processing here
+        else: # player 2 is the artifical agent.
+            captures = False
 
+            for i in range(0,8):                # AI Captures
+                for j in range(0,8):
+                    if board[i][j] == 2 or board[i][j] == 5: # king or regular
+                        if i < 6 and j < 6:
+                            if (board[i+1][j+1] == 1 or board[i+1][j+1] == 4) and board[i+2][j+2] == 0:
+                                newBoardState = np.copy(board)
+                                if board[i+1][j+1] == 4:
+                                    newBoardState[i+2][j+2] = 5
+                                else:
+                                    newBoardState[i+2][j+2] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i+1][j+1] = 0
+                                if i+2 == 7:
+                                    newBoardState[i+2][j+2] = 5
+                                captures = True
+                                moves.append(newBoardState)
+                        if i < 6 and j > 1:
+                            if (board[i+1][j-1] == 1 or board[i+1][j-1] == 4) and board[i+2][j-2] == 0:
+                                newBoardState = np.copy(board)
+                                if board[i+1][j-1] == 4:
+                                    newBoardState[i+2][j-2] = 5
+                                else:
+                                    newBoardState[i+2][j-2] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i+1][j-1] = 0
+                                if i+2 == 7:
+                                    newBoardState[i+2][j-2] = 5
+                                captures = True
+                                moves.append(newBoardState)
+                    if board[i][j] == 5: # king only
+                        if i > 1 and j > 1:
+                            if (board[i-1][j-1] == 1 or board[i-1][j-1] == 4) and board[i-2][j-2] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i-2][j-2] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i-1][j-1] = 0
+                                captures = True
+                                moves.append(newBoardState)
+                        if i > 1 and j < 6:
+                            if (board[i-1][j+1] == 1 or board[i-1][j+1] == 4) and board[i-2][j+2] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i-2][j+2] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                newBoardState[i-1][j+1] = 0
+                                captures = True
+                                moves.append(newBoardState)
+            
+            if captures == False:               # AI non captures
+                for i in range (0,8):         
+                    for j in range(0,8):
+                        if board[i][j] == 2 or board[i][j] == 5: # king or regular
+                            if i < 7 and j < 7:
+                                if board[i+1][j+1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i+1][j+1] = board[i][j]
+                                    newBoardState[i][j] = 0
+                                    if i+1 == 7:
+                                        newBoardState[i+1][j+1] = 5
+                                    moves.append(newBoardState)
+                                
+                            if i < 7 and j > 0:
+                                if board[i+1][j-1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i+1][j-1] = board[i][j]
+                                    newBoardState[i][j] = 0
+                                    if i+1 == 7:
+                                        newBoardState[i+1][j+1] = 5
+                                    moves.append(newBoardState)
+                        if board[i][j] == 5: # king only
+                            if i > 0 and j < 7:
+                                if board[i-1][j+1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i-1][j+1] = board[i][j]
+                                    newBoardState[i][j] = 0
+                                    moves.append(newBoardState)
+                            if i > 0 and j > 0:
+                                if board[i-1][j-1] == 0:
+                                    newBoardState = np.copy(board)
+                                    newBoardState[i-1][j-1] = board[i][j]
+                                    newBoardState[i][j] = 0
+                                    moves.append(newBoardState)
+                
         return moves
 
+    def minimax(self, boardState, player, depth, maxDepth):
+        self.maxDepth = maxDepth
+        self.depth = depth
+        self.boardState = boardState
+        self.player = player
+        self.values = []
+        self.moves = self.getPossibleMoves(self.boardState, self.player)
+        if self.depth == 1:
+            for x in self.moves:
+                self.values.append(self.getBoardValue(x))
+            if len(self.values) == 0:
+                if player == 1:
+                    return -100
+                else:
+                    return 100
+            if player == 1:
+                return max(self.values)
+            else:
+                return min(self.values)
+        elif self.depth != self.maxDepth:
+            self.agent = Agent()
+            for self.m in self.moves:
+                self.values.append(self.agent.minimax(self.m, (self.player%2)+1, self.depth - 1, self.maxDepth))
+            if len(self.values) == 0:
+                if player == 1:
+                    return -100
+                else:
+                    return 100
+            if self.player == 1:
+                return max(self.values)
+            else:
+                return min(self.values)
+        else:
+            self.agent = Agent()
+            for self.m in self.moves:
+                self.values.append(self.agent.minimax(self.m, (self.player%2)+1, self.depth - 1, self.maxDepth))
+            self.maxIndex = self.values.index(max(self.values))
+            return self.values[self.maxIndex], self.moves[self.maxIndex]
+    
     ###
     #
     # The move function will take the board state and run minimax on it to generate an optimal move.
     #
     ###
     def move(self, boardState):
-        optimal = (0,0)
+        self.boardState = boardState
+        valueOfChosen, stateOfChosen = self.minimax(boardState, 2, self.maxDepth, self.maxDepth)
 
-        # 
-
-        return optimal
+        return stateOfChosen
 
     ###
     #
@@ -87,29 +301,29 @@ def drawBoard(board):
         for y in range(0,8):
             if x % 2 == 1:
                 if y % 2 == 1:
-                    pygame.draw.rect(screen, darkSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
+                    squidgame.draw.rect(screen, darkSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40))
                 else:
-                    pygame.draw.rect(screen, lightSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
+                    squidgame.draw.rect(screen, lightSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40))
             else:
                 if y % 2 == 1:
-                    pygame.draw.rect(screen, lightSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40)) 
+                    squidgame.draw.rect(screen, lightSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40)) 
                 else:
-                    pygame.draw.rect(screen, darkSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
+                    squidgame.draw.rect(screen, darkSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40))
 
     for x in range(0,8):
         for y in range(0,8):
             if board[y][x] == 1:
-                pygame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
+                squidgame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
             elif board[y][x] == 2:
-                pygame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
+                squidgame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
             elif board[y][x] == 3:
-                pygame.draw.circle(screen, (0,225,0), ((x*40)+30,(y*40)+30),10)
+                squidgame.draw.circle(screen, (0,225,0), ((x*40)+30,(y*40)+30),10)
             elif board[y][x] == 4:
-                pygame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
+                squidgame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
                 king = fontB.render("!", 1, (0,0,0))
                 screen.blit(king, ((x*40)+27,(y*40)+19))
             elif board[y][x] == 5:
-                pygame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
+                squidgame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
                 king = fontB.render("!", 1, (225,225,225))
                 screen.blit(king, ((x*40)+27,(y*40)+19))
 
@@ -142,6 +356,9 @@ def capturesAvailable(board):
 #
 ###
 if __name__ == '__main__':
+    
+    agent = Agent(5)
+    
     pastClick = (-1,-1)
 
     board = []
@@ -157,13 +374,13 @@ if __name__ == '__main__':
 
     while True:
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+        for event in squidgame.event.get():
+            if event.type == squidgame.QUIT:
+                squidgame.quit()
                 break
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pressed()[0]: # confirm that it is a left click.
-                    y, x = pygame.mouse.get_pos()
+            elif event.type == squidgame.MOUSEBUTTONDOWN:
+                if squidgame.mouse.get_pressed()[0]: # confirm that it is a left click.
+                    y, x = squidgame.mouse.get_pos()
                     
                     # get which tile was clicked
                     x = math.floor((x-10)/40)
@@ -189,9 +406,22 @@ if __name__ == '__main__':
                                 board[x-dx][y-dy] = 0
 
                             # put multicapture here
+
+
                             pastClick = (-1,-1)
+                            clearBoard(board)
                             drawBoard(board)
-                            moved = True   
+                            moved = True
+                            Text = font.render("I'm thinking...", 1, (0,0,0))
+                            screen.blit(Text, (20,360))
+
+                            squidgame.display.update()
+
+                            # AI 
+                            board = agent.move(board)
+
+                            drawBoard(board)
+
                         else:
                             pastClick = (x,y)    
                     
@@ -243,4 +473,4 @@ if __name__ == '__main__':
 
 
         clock.tick(30)
-        pygame.display.update()
+        squidgame.display.update()
