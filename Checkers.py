@@ -201,7 +201,7 @@ class Agent:
                                     newBoardState[i+1][j-1] = board[i][j]
                                     newBoardState[i][j] = 0
                                     if i+1 == 7:
-                                        newBoardState[i+1][j+1] = 5
+                                        newBoardState[i+1][j-1] = 5
                                     moves.append(newBoardState)
                         if board[i][j] == 5: # king only
                             if i > 0 and j < 7:
