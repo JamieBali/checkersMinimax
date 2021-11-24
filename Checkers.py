@@ -35,13 +35,13 @@ class Agent:
         for i in range (0,8):
             for j in range (0,8):
                 if board[i][j] == 1:
-                    value -= (8-i)      # the regular pieces are worth more, if they are closer to becoming kings
+                    value -= (7-i)      # the regular pieces are worth more if they are closer to becoming kings
                 elif board[i][j] == 2:
-                    value += (i+1)      # same as above, but for the max agent's pieces
+                    value += i          # same as above, but for the AI's pieces
                 elif board[i][j] == 4:
-                    value -= 18         # 4 is an enemy king. The position is irrelevant, only that it is a king
+                    value -= 10         # 4 is an enemy king. The position is irrelevant, only that it is a king
                 elif board[i][j] == 5:
-                    value += 15         # 5 is an ally king, meaning we want as many of these as possible.
+                    value += 10         # 5 is an ally king, meaning we want as many of these as possible.
         return value
 
     ###
@@ -309,6 +309,7 @@ class Agent:
                     self.breaker = True
                 self.x += 1
             print(self.maxIndex)
+            print(self.moves[self.maxIndex])
             return self.moves[self.maxIndex]
     
     ###
@@ -409,7 +410,7 @@ def capturesAvailable(board):
 ###
 if __name__ == '__main__':
     
-    agent = Agent(4)
+    agent = Agent(7)
     
     pastClick = (-1,-1)
 
@@ -470,7 +471,7 @@ if __name__ == '__main__':
                             pygame.display.update()
 
                             # AI 
-                            tempBoard = agent.move(board)
+                            board = agent.move(board)
 
                             drawBoard(board)
 
