@@ -1,12 +1,20 @@
-import pygame as squidgame
+import pygame
 import math
 import numpy as np
 
-squidgame.init()
-screen = squidgame.display.set_mode((400,400))
-clock = squidgame.time.Clock()
-font = squidgame.font.SysFont("Arial", 20)
-fontB = squidgame.font.SysFont("Arial", 20, bold=True)
+pygame.init()
+screen = pygame.display.set_mode((400,400))
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("Arial", 20)
+fontB = pygame.font.SysFont("Arial", 20, bold=True)
+
+
+### TO DO LIST:
+# - Alpha-Beta Pruning
+# - Title Page
+# - Multi-Capture (Human)
+# - Multi-Capture (AI)
+# - Hints
 
 ###
 #
@@ -31,9 +39,9 @@ class Agent:
                 elif board[i][j] == 2:
                     value += (i+1)      # same as above, but for the max agent's pieces
                 elif board[i][j] == 4:
-                    value -= 15         # 4 is an enemy king. The position is irrelevant, only that it is a king
+                    value -= 18         # 4 is an enemy king. The position is irrelevant, only that it is a king
                 elif board[i][j] == 5:
-                    value += 18         # 5 is an ally king, meaning we want as many of these as possible.
+                    value += 15         # 5 is an ally king, meaning we want as many of these as possible.
         return value
 
     ###
@@ -219,44 +227,89 @@ class Agent:
                 
         return moves
 
-    def minimax(self, boardState, player, depth, maxDepth):
+    def minimax(self, boardState, player, depth, maxDepth, alpha, beta):
+        self.alpha = alpha
+        self.beta = beta
         self.maxDepth = maxDepth
         self.depth = depth
         self.boardState = boardState
         self.player = player
-        self.values = []
-        self.moves = self.getPossibleMoves(self.boardState, self.player)
+
+        self.moves = self.getPossibleMoves(self.boardState, self.player)    
+        
+        self.minval = 100
+        self.maxval = -100
+        
+        self.breaker = False
+        self.x = 0
+
+        ### BOTTOM LAYER OF TREE
         if self.depth == 1:
-            for x in self.moves:
-                self.values.append(self.getBoardValue(x))
-            if len(self.values) == 0:
-                if player == 1:
-                    return -100
-                else:
-                    return 100
-            if player == 1:
-                return max(self.values)
+            while self.x < len(self.moves) and self.breaker == False:
+                self.temp = self.getBoardValue(self.moves[self.x])
+                print(self.temp)
+                if self.player == 2:
+                    if self.temp > self.maxval:
+                        self.maxval = self.temp
+                    if self.temp > self.alpha:
+                        self.alpha = self.temp
+                if self.player == 1:
+                    if self.temp < self.minval:
+                        self.minval = self.temp
+                    if self.temp < self.beta:
+                        self.beta = self.temp
+                self.x += 1
+            if self.player == 2:
+                return self.maxval, self.alpha
             else:
-                return min(self.values)
+                return self.minval, self.beta
+
+        ### MIDDLE LAYERS OF TREE
         elif self.depth != self.maxDepth:
             self.agent = Agent()
-            for self.m in self.moves:
-                self.values.append(self.agent.minimax(self.m, (self.player%2)+1, self.depth - 1, self.maxDepth))
-            if len(self.values) == 0:
+            while self.x < len(self.moves) and self.breaker == False:
                 if player == 1:
-                    return -100
+                    self.temp, self.beta = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 else:
-                    return 100
-            if self.player == 1:
-                return max(self.values)
+                    self.temp, self.alpha = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                print(self.temp)
+                if self.player == 2:
+                    if self.temp > self.maxval:
+                        self.maxval = self.temp
+                    if self.temp > self.alpha:
+                        self.alpha = self.temp
+                    if self.alpha >= self.beta:
+                        self.breaker = True
+                if self.player == 1:
+                    if self.temp < self.minval:
+                        self.minval = self.temp
+                    if self.temp < self.beta:
+                        self.beta = self.temp
+                    if self.alpha >= self.beta:
+                        self.breaker = True
+                self.x += 1
+            if self.player == 2:
+                return self.maxval, self.alpha
             else:
-                return min(self.values)
+                return self.minval, self.beta
+
+        ### ROOT OF TREE
         else:
             self.agent = Agent()
-            for self.m in self.moves:
-                self.values.append(self.agent.minimax(self.m, (self.player%2)+1, self.depth - 1, self.maxDepth))
-            self.maxIndex = self.values.index(max(self.values))
-            return self.values[self.maxIndex], self.moves[self.maxIndex]
+            self.maxIndex = -1
+            while self.x < len(self.moves) and self.breaker == False:
+                self.temp, self.alpha, self.beta = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                print(self.temp)
+                if self.temp > self.maxval:
+                    self.maxval = self.temp
+                    self.maxIndex = self.x
+                if self.temp > self.alpha:
+                    self.alpha = self.temp
+                if self.alpha >= self.beta:
+                    self.breaker = True
+                self.x += 1
+            print(self.maxIndex)
+            return self.moves[self.maxIndex]
     
     ###
     #
@@ -265,8 +318,7 @@ class Agent:
     ###
     def move(self, boardState):
         self.boardState = boardState
-        valueOfChosen, stateOfChosen = self.minimax(boardState, 2, self.maxDepth, self.maxDepth)
-
+        stateOfChosen = self.minimax(boardState, 2, self.maxDepth, self.maxDepth, -100, 100)
         return stateOfChosen
 
     ###
@@ -301,29 +353,29 @@ def drawBoard(board):
         for y in range(0,8):
             if x % 2 == 1:
                 if y % 2 == 1:
-                    squidgame.draw.rect(screen, darkSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40))
+                    pygame.draw.rect(screen, darkSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
                 else:
-                    squidgame.draw.rect(screen, lightSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40))
+                    pygame.draw.rect(screen, lightSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
             else:
                 if y % 2 == 1:
-                    squidgame.draw.rect(screen, lightSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40)) 
+                    pygame.draw.rect(screen, lightSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40)) 
                 else:
-                    squidgame.draw.rect(screen, darkSquare, squidgame.Rect(10 + (40*x),10 + (40*y),40,40))
+                    pygame.draw.rect(screen, darkSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
 
     for x in range(0,8):
         for y in range(0,8):
             if board[y][x] == 1:
-                squidgame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
+                pygame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
             elif board[y][x] == 2:
-                squidgame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
+                pygame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
             elif board[y][x] == 3:
-                squidgame.draw.circle(screen, (0,225,0), ((x*40)+30,(y*40)+30),10)
+                pygame.draw.circle(screen, (0,225,0), ((x*40)+30,(y*40)+30),10)
             elif board[y][x] == 4:
-                squidgame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
+                pygame.draw.circle(screen, (255,0,0), ((x*40)+30,(y*40)+30),15)
                 king = fontB.render("!", 1, (0,0,0))
                 screen.blit(king, ((x*40)+27,(y*40)+19))
             elif board[y][x] == 5:
-                squidgame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
+                pygame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
                 king = fontB.render("!", 1, (225,225,225))
                 screen.blit(king, ((x*40)+27,(y*40)+19))
 
@@ -331,11 +383,11 @@ def capturesAvailable(board):
     captures = False
     for a in range(0,8):            # go through all possible moves to see if a valid capture is available
         for b in range(0,8):
-            if board[a][b] == 1 and a > 1 and b < 6:
+            if (board[a][b] == 1 or board[a][b] == 4) and a > 1 and b < 6:
                 if board[a-1][b+1] == 2 or board[a-1][b+1] == 5:
                     if board[a-2][b+2] == 0:
                         captures = True
-            if board[a][b] == 1 and a > 1 and b > 1:
+            if (board[a][b] == 1 or board[a][b] == 4) and a > 1 and b > 1:
                 if board[a-1][b-1] == 2 or board[a-1][b-1] == 5:
                     if board[a-2][b-2] == 0:
                             captures = True
@@ -357,30 +409,30 @@ def capturesAvailable(board):
 ###
 if __name__ == '__main__':
     
-    agent = Agent(5)
+    agent = Agent(4)
     
     pastClick = (-1,-1)
 
     board = []
-    board.append([2,0,2,0,2,0,2,0])
     board.append([0,2,0,2,0,2,0,2])
     board.append([2,0,2,0,2,0,2,0])
+    board.append([0,2,0,2,0,2,0,2])
     board.append([0,0,0,0,0,0,0,0])
     board.append([0,0,0,0,0,0,0,0])
+    board.append([1,0,1,0,1,0,1,0])
     board.append([0,1,0,1,0,1,0,1])
     board.append([1,0,1,0,1,0,1,0])
-    board.append([0,1,0,1,0,1,0,1])    
     drawBoard(board)
 
     while True:
 
-        for event in squidgame.event.get():
-            if event.type == squidgame.QUIT:
-                squidgame.quit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
                 break
-            elif event.type == squidgame.MOUSEBUTTONDOWN:
-                if squidgame.mouse.get_pressed()[0]: # confirm that it is a left click.
-                    y, x = squidgame.mouse.get_pos()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]: # confirm that it is a left click.
+                    y, x = pygame.mouse.get_pos()
                     
                     # get which tile was clicked
                     x = math.floor((x-10)/40)
@@ -415,10 +467,10 @@ if __name__ == '__main__':
                             Text = font.render("I'm thinking...", 1, (0,0,0))
                             screen.blit(Text, (20,360))
 
-                            squidgame.display.update()
+                            pygame.display.update()
 
                             # AI 
-                            board = agent.move(board)
+                            tempBoard = agent.move(board)
 
                             drawBoard(board)
 
@@ -473,4 +525,4 @@ if __name__ == '__main__':
 
 
         clock.tick(30)
-        squidgame.display.update()
+        pygame.display.update()
