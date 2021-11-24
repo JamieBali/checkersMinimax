@@ -298,7 +298,7 @@ class Agent:
             self.agent = Agent()
             self.maxIndex = -1
             while self.x < len(self.moves) and self.breaker == False:
-                self.temp, self.alpha, self.beta = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                self.temp, self.alpha = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 print(self.temp)
                 if self.temp > self.maxval:
                     self.maxval = self.temp
