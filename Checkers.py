@@ -62,7 +62,7 @@ class Agent:
                 for j in range(0,8):
                     if board[i][j] == 4 or board[i][j] == 1: # king or regular
                         if i > 1 and j < 6:
-                            if (board[i-1][j+1] == 1 or board[i-1][j+1] == 4) and board[i-2][j+2] == 0:
+                            if (board[i-1][j+1] == 2 or board[i-1][j+1] == 5) and board[i-2][j+2] == 0:
                                 newBoardState = np.copy(board)
                                 if newBoardState[i-1][j+1] == 5:
                                     newBoardState[i-2][j+2] == 4
@@ -75,7 +75,7 @@ class Agent:
                                 captures = True
                                 moves.append(newBoardState)
                         if i > 1 and j > 1:
-                            if (board[i-1][j-1] == 1 or board[i-1][j-1] == 4) and board[i-2][j-2] == 0:
+                            if (board[i-1][j-1] == 2 or board[i-1][j-1] == 5) and board[i-2][j-2] == 0:
                                 newBoardState = np.copy(board)
                                 if newBoardState[i-1][j-1] == 5:
                                     newBoardState[i-2][j-2] == 4
@@ -89,7 +89,7 @@ class Agent:
                                 moves.append(newBoardState)
                     if board[i][j] == 4: # king only
                         if i < 6 and j < 6:
-                            if (board[i+1][j+1] == 2 or board[i+1][j+1] == 4) and board[i+2][j+2] == 0:
+                            if (board[i+1][j+1] == 2 or board[i+1][j+1] == 5) and board[i+2][j+2] == 0:
                                 newBoardState = np.copy(board)
                                 if newBoardState[i+1][j+1] == 5:
                                     newBoardState[i+2][j+2] == 4
@@ -100,7 +100,7 @@ class Agent:
                                 captures = True
                                 moves.append(newBoardState)
                         if i < 6 and j > 1:
-                            if (board[i+1][j-1] == 2 or board[i+1][j-1] == 4) and board[i+2][j-2] == 0:
+                            if (board[i+1][j-1] == 2 or board[i+1][j-1] == 5) and board[i+2][j-2] == 0:
                                 newBoardState = np.copy(board)
                                 if newBoardState[i+1][j-1] == 5:
                                     newBoardState[i+2][j-2] == 4
@@ -110,6 +110,7 @@ class Agent:
                                 newBoardState[i+1][j-1] = 0
                                 captures = True
                                 moves.append(newBoardState)
+                                
             if captures == False:            # player 1 non captures
                 for i in range(0,8):
                     for j in range(0,8):
@@ -296,21 +297,22 @@ class Agent:
         ### ROOT OF TREE
         else:
             self.agent = Agent()
-            self.maxIndex = -1
-            while self.x < len(self.moves) and self.breaker == False:
-                self.temp, self.alpha = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
-                print(self.temp)
-                if self.temp > self.maxval:
-                    self.maxval = self.temp
-                    self.maxIndex = self.x
-                if self.temp > self.alpha:
-                    self.alpha = self.temp
-                if self.alpha >= self.beta:
-                    self.breaker = True
+            self.bestIndex = -1
+            while self.x < len(self.moves):
+                if player == 2:
+                    self.temp, self.alpha = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                else:
+                    self.temp, self.beta = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                if player == 2:
+                    if self.temp > self.maxval:
+                        self.maxval = self.temp
+                        self.bestIndex = self.x
+                else:
+                    if self.temp < self.minval:
+                        self.minval = self.temp
+                        self.bestIndex = self.x
                 self.x += 1
-            print(self.maxIndex)
-            print(self.moves[self.maxIndex])
-            return self.moves[self.maxIndex]
+            return self.moves[self.bestIndex]
     
     ###
     #
@@ -319,29 +321,22 @@ class Agent:
     ###
     def move(self, boardState):
         self.boardState = boardState
-        stateOfChosen = self.minimax(boardState, 2, self.maxDepth, self.maxDepth, -100, 100)
+        stateOfChosen = self.minimax(self.boardState, 2, self.maxDepth, self.maxDepth, -100, 100)
         return stateOfChosen
 
-    ###
-    #
-    # Rather than writing a seperate system to find hints, we can more easily rotate the board 180 degrees
-    # and put the rotated board through the regular agent. We then need to remember to rotate the board back
-    # to normal before returning the move.
-    #
-    ###
     def hint(self, boardState):
-        suggestion = "temp to remove error markers"
-
-        # rotatedBoard = rotate(boardState, 180)
-        # suggestion = move(self, rotatedBoard)
-        # suggestion = rotate(suggestion, 180)
-
-        return suggestion
+        self.boardState = boardState
+        self.stateOfChosen = self.minimax(self.boardState, 1, self.maxDepth, self.maxDepth, -100, 100)
+        for x in range(0,8):
+            for y in range(0,8):
+                if (self.stateOfChosen[x][y] == 1 or self.stateOfChosen[x][y] == 4) and self.boardState[x][y] == 0:
+                    self.boardState[x][y] = 9
+        return self.boardState
 
 def clearBoard(board):
     for i in range(0,8): # clear board
         for j in range(0,8):
-            if board[i][j] == 3:
+            if board[i][j] == 3 or board[i][j] == 9:
                 board[i][j] = 0
 
 def drawBoard(board):
@@ -362,6 +357,10 @@ def drawBoard(board):
                     pygame.draw.rect(screen, lightSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40)) 
                 else:
                     pygame.draw.rect(screen, darkSquare, pygame.Rect(10 + (40*x),10 + (40*y),40,40))
+    
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(340, 30, 40, 40))
+    txt = font.render("?", 1, (0,0,0))
+    screen.blit(txt, (355, 38))
 
     for x in range(0,8):
         for y in range(0,8):
@@ -379,6 +378,8 @@ def drawBoard(board):
                 pygame.draw.circle(screen, (0,0,0), ((x*40)+30,(y*40)+30),15)
                 king = fontB.render("!", 1, (225,225,225))
                 screen.blit(king, ((x*40)+27,(y*40)+19))
+            elif board[y][x] == 9:
+                pygame.draw.circle(screen, (0,0,128), ((x*40)+30,(y*40)+30),10)
 
 def capturesAvailable(board):
     captures = False
@@ -433,12 +434,13 @@ if __name__ == '__main__':
                 break
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if pygame.mouse.get_pressed()[0]: # confirm that it is a left click.
-                    y, x = pygame.mouse.get_pos()
+                    dy, dx = pygame.mouse.get_pos()
                     
                     # get which tile was clicked
-                    x = math.floor((x-10)/40)
-                    y = math.floor((y-10)/40)
-                    
+                    x = math.floor((dx-10)/40)
+                    y = math.floor((dy-10)/40)
+
+                   
                     if x >= 0 and x < 8 and y >= 0 and y < 8:
 
                         moved = False
@@ -520,6 +522,17 @@ if __name__ == '__main__':
                                 screen.blit(errorText, (20,360))
                                 
                         captures = False
+                    elif dy > 340 and dy < 380 and dx > 30 and dx < 70:
+                        clearBoard(board)
+                        drawBoard(board)
+                        txt = font.render("Let's have a look for you!", 1, (0,0,0))
+                        screen.blit(txt, (20,360))
+                        pygame.display.update()
+                        board = agent.hint(board)
+                        drawBoard(board)
+                        txt = font.render("Try moving here!", 1, (0,0,0))
+                        screen.blit(txt, (20,360))
+
                     x = -1
                     y = -1    
                         
