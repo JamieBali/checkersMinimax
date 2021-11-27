@@ -10,11 +10,8 @@ fontB = pygame.font.SysFont("Arial", 20, bold=True)
 
 
 ### TO DO LIST:
-# - Alpha-Beta Pruning
-# - Title Page
 # - Multi-Capture (Human)
 # - Multi-Capture (AI)
-# - Hints
 
 ###
 #
@@ -403,6 +400,51 @@ def capturesAvailable(board):
                         captures = True
     return captures
 
+def drawTitlePage(diff):
+    darkSquare = (138,120,93)
+    lightSquare = (220,211,234)
+
+    screen.fill((255,255,255))
+    titleText = font.render("Checkers !", 1, (0,0,0))
+    screen.blit(titleText, (150,80))
+    diffText = font.render("Select your difficulty!", 1, (0,0,0))
+    screen.blit(diffText, (110,150))
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(50,200,40,40))
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(102,200,40,40))
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(154,200,40,40))
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(206,200,40,40))
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(258,200,40,40))
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(310,200,40,40))
+    if diff == 1:
+        pygame.draw.rect(screen, darkSquare, pygame.Rect(50,200,40,40))
+    elif diff == 2:
+        pygame.draw.rect(screen, darkSquare, pygame.Rect(102,200,40,40))
+    elif diff == 3:
+        pygame.draw.rect(screen, darkSquare, pygame.Rect(154,200,40,40))
+    elif diff == 4:
+        pygame.draw.rect(screen, darkSquare, pygame.Rect(206,200,40,40))
+    elif diff == 5:
+        pygame.draw.rect(screen, darkSquare, pygame.Rect(258,200,40,40))
+    else:
+        pygame.draw.rect(screen, darkSquare, pygame.Rect(310,200,40,40))
+    
+    numText = font.render("1", 1, (0,0,0))
+    screen.blit(numText, (66,208))
+    numText = font.render("2", 1, (0,0,0))
+    screen.blit(numText, (118,208))
+    numText = font.render("3", 1, (0,0,0))
+    screen.blit(numText, (170,208))
+    numText = font.render("4", 1, (0,0,0))
+    screen.blit(numText, (222,208))
+    numText = font.render("5", 1, (0,0,0))
+    screen.blit(numText, (274,208))
+    numText = font.render("6", 1, (0,0,0))
+    screen.blit(numText, (326,208))
+
+    pygame.draw.rect(screen, lightSquare, pygame.Rect(100, 300, 200, 50))
+    goText = font.render("Let's Play!", 1, (0,0,0))
+    screen.blit(goText, (160,312))
+
 ###
 #
 # Main function. Takes no inputs.
@@ -410,8 +452,42 @@ def capturesAvailable(board):
 #
 ###
 if __name__ == '__main__':
-    
-    agent = Agent(7)
+    title = True
+    difficulty = 3
+    while title:
+        drawTitlePage(difficulty)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                break
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:
+                    x, y = pygame.mouse.get_pos()
+                    if x > 100 and x < 300 and y > 300 and y < 350:
+                        title = False
+                    elif y > 200 and y < 240:
+                        if x > 50 and x < 90:
+                            difficulty = 1
+                        elif x > 102 and x < 142:
+                            difficulty = 2
+                        elif x > 154 and x < 194:
+                            difficulty = 3
+                        elif x > 206 and x < 246:
+                            difficulty = 4
+                        elif x > 258 and x < 298:
+                            difficulty = 5
+                        elif x > 310 and x < 350:
+                            difficulty = 6
+
+        clock.tick(30)
+        pygame.display.update()        
+
+    # Difficulty 1 should think 2 moves ahead. It's move + your move
+    # what if we just double it? It'll think 12 moves ahead on diff 6 which will take a while.
+    # gm chess players think 7 moves ahead, so do we just go the same for checkers, which would just be diff + 1?
+    # what about + 2 for good luck
+    difficulty = difficulty + 2
+    agent = Agent(difficulty)
     
     pastClick = (-1,-1)
 
