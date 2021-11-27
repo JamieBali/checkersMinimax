@@ -8,9 +8,218 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 20)
 fontB = pygame.font.SysFont("Arial", 20, bold=True)
 
+###
+#
+# When generating the possible moves, we will first look for captures as they must take precedence.
+# Since captures are manditory, if the possible moves stack is empty after this processing, we will
+# perform a second run to get regular moves. This is slightly less efficient time-wise, but uses less
+# storage space.
+#
+# For ease of processing, we will return the board state after each move, as opposed to the move itself.
+#
+###
+def getPossibleMoves(inboard, player, mc = "False", mcfiller = [0]): # for some reason this wasn't working inside the class, but it's fine out here. could be something to do with recursion limits?
+    moves = []
+    tempBoard = np.copy(inboard)
 
-### TO DO LIST:
-# - Multi-Capture (AI)
+    while len(tempBoard) != 8:
+        tempBoard = tempBoard[0]
+
+    board = tempBoard
+    if player == 1: # player 1 is the human player.
+        captures = False
+        for i in range(0,8):             # player 1 captures
+            for j in range(0,8):
+                if board[i][j] == 4 or board[i][j] == 1: # king or regular
+                    if i > 1 and j < 6:
+                        if (board[i-1][j+1] == 2 or board[i-1][j+1] == 5) and board[i-2][j+2] == 0:
+                            newBoardState = np.copy(board)
+                            if newBoardState[i-1][j+1] == 5:
+                                newBoardState[i-2][j+2] == 4
+                            else:
+                                newBoardState[i-2][j+2] = board[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i-1][j+1] = 0
+                            if i-2 == 0:
+                                newBoardState[i-2][j+2] = 4
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 1, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+                    if i > 1 and j > 1:
+                        if (board[i-1][j-1] == 2 or board[i-1][j-1] == 5) and board[i-2][j-2] == 0:
+                            newBoardState = np.copy(board)
+                            if newBoardState[i-1][j-1] == 5:
+                                newBoardState[i-2][j-2] == 4
+                            else:
+                                newBoardState[i-2][j-2] = board[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i-1][j-1] = 0
+                            if i-2 == 0:
+                                newBoardState[i-2][j-2] = 4
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 1, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+                if board[i][j] == 4: # king only
+                    if i < 6 and j < 6:
+                        if (board[i+1][j+1] == 2 or board[i+1][j+1] == 5) and board[i+2][j+2] == 0:
+                            newBoardState = np.copy(board)
+                            if newBoardState[i+1][j+1] == 5:
+                                newBoardState[i+2][j+2] == 4
+                            else:
+                                newBoardState[i+2][j+2] = board[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i+1][j+1] = 0
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 1, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+                    if i < 6 and j > 1:
+                        if (board[i+1][j-1] == 2 or board[i+1][j-1] == 5) and board[i+2][j-2] == 0:
+                            newBoardState = np.copy(board)
+                            if newBoardState[i+1][j-1] == 5:
+                                newBoardState[i+2][j-2] == 4
+                            else:
+                                newBoardState[i+2][j-2] = board[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i+1][j-1] = 0
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 1, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x, mcfiller])
+                            
+        if captures == False and mc == "False":            # player 1 non captures
+            for i in range(0,8):
+                for j in range(0,8):
+                    if board[i][j] == 4 or board[i][j] == 1: # king or regular
+                        if i > 0 and j < 7:
+                            if board[i-1][j+1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i-1][j+1] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                moves.append([newBoardState, mcfiller])
+                        if i > 0 and j > 0:
+                            if board[i-1][j-1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i-1][j-1] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                moves.append([newBoardState, mcfiller])
+                    if board[i][j] == 4: # king only
+                        if i < 7 and j < 7:
+                            if board[i+1][j+1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i+1][j+1] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                moves.append([newBoardState, mcfiller])
+                        if i < 7 and j > 0:
+                            if board[i+1][j-1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i+1][j-1] = newBoardState[i][j]
+                                newBoardState[i][j] = 0
+                                moves.append([newBoardState, mcfiller])
+
+    else: # player 2 is the artifical agent.
+        captures = False
+
+        for i in range(0,8):                # AI Captures
+            for j in range(0,8):
+                if board[i][j] == 2 or board[i][j] == 5: # king or regular
+                    if i < 6 and j < 6:
+                        if (board[i+1][j+1] == 1 or board[i+1][j+1] == 4) and board[i+2][j+2] == 0:
+                            newBoardState = np.copy(board)
+                            if board[i+1][j+1] == 4:
+                                newBoardState[i+2][j+2] = 5
+                            else:
+                                newBoardState[i+2][j+2] = newBoardState[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i+1][j+1] = 0
+                            if i+2 == 7:
+                                newBoardState[i+2][j+2] = 5
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 2, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+                    if i < 6 and j > 1:
+                        if (board[i+1][j-1] == 1 or board[i+1][j-1] == 4) and board[i+2][j-2] == 0:
+                            newBoardState = np.copy(board)
+                            if board[i+1][j-1] == 4:
+                                newBoardState[i+2][j-2] = 5
+                            else:
+                                newBoardState[i+2][j-2] = newBoardState[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i+1][j-1] = 0
+                            if i+2 == 7:
+                                newBoardState[i+2][j-2] = 5
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 2, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+                if board[i][j] == 5: # king only
+                    if i > 1 and j > 1:
+                        if (board[i-1][j-1] == 1 or board[i-1][j-1] == 4) and board[i-2][j-2] == 0:
+                            newBoardState = np.copy(board)
+                            newBoardState[i-2][j-2] = newBoardState[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i-1][j-1] = 0
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 2, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+                    if i > 1 and j < 6:
+                        if (board[i-1][j+1] == 1 or board[i-1][j+1] == 4) and board[i-2][j+2] == 0:
+                            newBoardState = np.copy(board)
+                            newBoardState[i-2][j+2] = newBoardState[i][j]
+                            newBoardState[i][j] = 0
+                            newBoardState[i-1][j+1] = 0
+                            captures = True
+                            moves.append([newBoardState, mcfiller])
+                            mcmoves = getPossibleMoves(newBoardState, 2, "True", newBoardState)
+                            for x in mcmoves:
+                                moves.append([x,mcfiller])
+        
+        if captures == False and mc == "False":               # AI non captures
+            for i in range (0,8):         
+                for j in range(0,8):
+                    if board[i][j] == 2 or board[i][j] == 5: # king or regular
+                        if i < 7 and j < 7:
+                            if board[i+1][j+1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i+1][j+1] = board[i][j]
+                                newBoardState[i][j] = 0
+                                if i+1 == 7:
+                                    newBoardState[i+1][j+1] = 5
+                                moves.append([newBoardState, mcfiller])
+                            
+                        if i < 7 and j > 0:
+                            if board[i+1][j-1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i+1][j-1] = board[i][j]
+                                newBoardState[i][j] = 0
+                                if i+1 == 7:
+                                    newBoardState[i+1][j-1] = 5
+                                moves.append([newBoardState, mcfiller])
+                    if board[i][j] == 5: # king only
+                        if i > 0 and j < 7:
+                            if board[i-1][j+1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i-1][j+1] = board[i][j]
+                                newBoardState[i][j] = 0
+                                moves.append([newBoardState, mcfiller])
+                        if i > 0 and j > 0:
+                            if board[i-1][j-1] == 0:
+                                newBoardState = np.copy(board)
+                                newBoardState[i-1][j-1] = board[i][j]
+                                newBoardState[i][j] = 0
+                                moves.append([newBoardState, mcfiller])
+    return moves
 
 ###
 #
@@ -28,6 +237,8 @@ class Agent:
 
     def getBoardValue(self, board):
         value = 0
+        while len(board) != 8:
+            board = board[0]
         for i in range (0,8):
             for j in range (0,8):
                 if board[i][j] == 1:
@@ -40,190 +251,7 @@ class Agent:
                     value += 10         # 5 is an ally king, meaning we want as many of these as possible.
         return value
 
-    ###
-    #
-    # When generating the possible moves, we will first look for captures as they must take precedence.
-    # Since captures are manditory, if the possible moves stack is empty after this processing, we will
-    # perform a second run to get regular moves. This is slightly less efficient time-wise, but uses less
-    # storage space.
-    #
-    # For ease of processing, we will return the board state after each move, as opposed to the move itself.
-    #
-    ###
-    def getPossibleMoves(self, board, player):
-        moves = []
-        if player == 1: # player 1 is the human player.
-            captures = False
-            for i in range(0,8):             # player 1 captures
-                for j in range(0,8):
-                    if board[i][j] == 4 or board[i][j] == 1: # king or regular
-                        if i > 1 and j < 6:
-                            if (board[i-1][j+1] == 2 or board[i-1][j+1] == 5) and board[i-2][j+2] == 0:
-                                newBoardState = np.copy(board)
-                                if newBoardState[i-1][j+1] == 5:
-                                    newBoardState[i-2][j+2] == 4
-                                else:
-                                    newBoardState[i-2][j+2] = board[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i-1][j+1] = 0
-                                if i-2 == 0:
-                                    newBoardState[i-2][j+2] = 4
-                                captures = True
-                                moves.append(newBoardState)
-                        if i > 1 and j > 1:
-                            if (board[i-1][j-1] == 2 or board[i-1][j-1] == 5) and board[i-2][j-2] == 0:
-                                newBoardState = np.copy(board)
-                                if newBoardState[i-1][j-1] == 5:
-                                    newBoardState[i-2][j-2] == 4
-                                else:
-                                    newBoardState[i-2][j-2] = board[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i-1][j-1] = 0
-                                if i-2 == 0:
-                                    newBoardState[i-2][j-2] = 4
-                                captures = True
-                                moves.append(newBoardState)
-                    if board[i][j] == 4: # king only
-                        if i < 6 and j < 6:
-                            if (board[i+1][j+1] == 2 or board[i+1][j+1] == 5) and board[i+2][j+2] == 0:
-                                newBoardState = np.copy(board)
-                                if newBoardState[i+1][j+1] == 5:
-                                    newBoardState[i+2][j+2] == 4
-                                else:
-                                    newBoardState[i+2][j+2] = board[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i+1][j+1] = 0
-                                captures = True
-                                moves.append(newBoardState)
-                        if i < 6 and j > 1:
-                            if (board[i+1][j-1] == 2 or board[i+1][j-1] == 5) and board[i+2][j-2] == 0:
-                                newBoardState = np.copy(board)
-                                if newBoardState[i+1][j-1] == 5:
-                                    newBoardState[i+2][j-2] == 4
-                                else:
-                                    newBoardState[i+2][j-2] = board[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i+1][j-1] = 0
-                                captures = True
-                                moves.append(newBoardState)
-                                
-            if captures == False:            # player 1 non captures
-                for i in range(0,8):
-                    for j in range(0,8):
-                        if board[i][j] == 4 or board[i][j] == 1: # king or regular
-                            if i > 0 and j < 7:
-                                if board[i-1][j+1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i-1][j+1] = newBoardState[i][j]
-                                    newBoardState[i][j] = 0
-                                    moves.append(newBoardState)
-                            if i > 0 and j > 0:
-                                if board[i-1][j-1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i-1][j-1] = newBoardState[i][j]
-                                    newBoardState[i][j] = 0
-                                    moves.append(newBoardState)
-                        if board[i][j] == 4: # king only
-                            if i < 7 and j < 7:
-                                if board[i+1][j+1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i+1][j+1] = newBoardState[i][j]
-                                    newBoardState[i][j] = 0
-                                    moves.append(newBoardState)
-                            if i < 7 and j > 0:
-                                if board[i+1][j-1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i+1][j-1] = newBoardState[i][j]
-                                    newBoardState[i][j] = 0
-                                    moves.append(newBoardState)
-
-        else: # player 2 is the artifical agent.
-            captures = False
-
-            for i in range(0,8):                # AI Captures
-                for j in range(0,8):
-                    if board[i][j] == 2 or board[i][j] == 5: # king or regular
-                        if i < 6 and j < 6:
-                            if (board[i+1][j+1] == 1 or board[i+1][j+1] == 4) and board[i+2][j+2] == 0:
-                                newBoardState = np.copy(board)
-                                if board[i+1][j+1] == 4:
-                                    newBoardState[i+2][j+2] = 5
-                                else:
-                                    newBoardState[i+2][j+2] = newBoardState[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i+1][j+1] = 0
-                                if i+2 == 7:
-                                    newBoardState[i+2][j+2] = 5
-                                captures = True
-                                moves.append(newBoardState)
-                        if i < 6 and j > 1:
-                            if (board[i+1][j-1] == 1 or board[i+1][j-1] == 4) and board[i+2][j-2] == 0:
-                                newBoardState = np.copy(board)
-                                if board[i+1][j-1] == 4:
-                                    newBoardState[i+2][j-2] = 5
-                                else:
-                                    newBoardState[i+2][j-2] = newBoardState[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i+1][j-1] = 0
-                                if i+2 == 7:
-                                    newBoardState[i+2][j-2] = 5
-                                captures = True
-                                moves.append(newBoardState)
-                    if board[i][j] == 5: # king only
-                        if i > 1 and j > 1:
-                            if (board[i-1][j-1] == 1 or board[i-1][j-1] == 4) and board[i-2][j-2] == 0:
-                                newBoardState = np.copy(board)
-                                newBoardState[i-2][j-2] = newBoardState[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i-1][j-1] = 0
-                                captures = True
-                                moves.append(newBoardState)
-                        if i > 1 and j < 6:
-                            if (board[i-1][j+1] == 1 or board[i-1][j+1] == 4) and board[i-2][j+2] == 0:
-                                newBoardState = np.copy(board)
-                                newBoardState[i-2][j+2] = newBoardState[i][j]
-                                newBoardState[i][j] = 0
-                                newBoardState[i-1][j+1] = 0
-                                captures = True
-                                moves.append(newBoardState)
-            
-            if captures == False:               # AI non captures
-                for i in range (0,8):         
-                    for j in range(0,8):
-                        if board[i][j] == 2 or board[i][j] == 5: # king or regular
-                            if i < 7 and j < 7:
-                                if board[i+1][j+1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i+1][j+1] = board[i][j]
-                                    newBoardState[i][j] = 0
-                                    if i+1 == 7:
-                                        newBoardState[i+1][j+1] = 5
-                                    moves.append(newBoardState)
-                                
-                            if i < 7 and j > 0:
-                                if board[i+1][j-1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i+1][j-1] = board[i][j]
-                                    newBoardState[i][j] = 0
-                                    if i+1 == 7:
-                                        newBoardState[i+1][j-1] = 5
-                                    moves.append(newBoardState)
-                        if board[i][j] == 5: # king only
-                            if i > 0 and j < 7:
-                                if board[i-1][j+1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i-1][j+1] = board[i][j]
-                                    newBoardState[i][j] = 0
-                                    moves.append(newBoardState)
-                            if i > 0 and j > 0:
-                                if board[i-1][j-1] == 0:
-                                    newBoardState = np.copy(board)
-                                    newBoardState[i-1][j-1] = board[i][j]
-                                    newBoardState[i][j] = 0
-                                    moves.append(newBoardState)
-                
-        return moves
-
+    
     def minimax(self, boardState, player, depth, maxDepth, alpha, beta):
         self.alpha = alpha
         self.beta = beta
@@ -232,7 +260,7 @@ class Agent:
         self.boardState = boardState
         self.player = player
 
-        self.moves = self.getPossibleMoves(self.boardState, self.player)    
+        self.moves = getPossibleMoves(self.boardState, self.player)    
         
         self.minval = 100
         self.maxval = -100
@@ -243,8 +271,7 @@ class Agent:
         ### BOTTOM LAYER OF TREE
         if self.depth == 1:
             while self.x < len(self.moves) and self.breaker == False:
-                self.temp = self.getBoardValue(self.moves[self.x])
-                print(self.temp)
+                self.temp = self.getBoardValue(self.moves[self.x][0])
                 if self.player == 2:
                     if self.temp > self.maxval:
                         self.maxval = self.temp
@@ -266,10 +293,9 @@ class Agent:
             self.agent = Agent()
             while self.x < len(self.moves) and self.breaker == False:
                 if player == 1:
-                    self.temp, self.beta = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                    self.temp, self.beta = self.agent.minimax(self.moves[self.x][0], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 else:
-                    self.temp, self.alpha = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
-                print(self.temp)
+                    self.temp, self.alpha = self.agent.minimax(self.moves[self.x][0], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 if self.player == 2:
                     if self.temp > self.maxval:
                         self.maxval = self.temp
@@ -292,13 +318,17 @@ class Agent:
 
         ### ROOT OF TREE
         else:
+            if len(self.moves) == 0:
+                return "Loss"
+            if len(self.moves) == 1:
+                return self.moves[0]
             self.agent = Agent()
             self.bestIndex = -1
             while self.x < len(self.moves):
                 if player == 2:
-                    self.temp, self.alpha = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                    self.temp, self.alpha = self.agent.minimax(self.moves[self.x][0], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 else:
-                    self.temp, self.beta = self.agent.minimax(self.moves[self.x], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
+                    self.temp, self.beta = self.agent.minimax(self.moves[self.x][0], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 if player == 2:
                     if self.temp > self.maxval:
                         self.maxval = self.temp
@@ -336,6 +366,7 @@ def clearBoard(board):
                 board[i][j] = 0
 
 def drawBoard(board):
+
     screen.fill((255,255,255))
     
     darkSquare = (138,120,93)
@@ -503,7 +534,9 @@ if __name__ == '__main__':
 
     mcavailable = False
 
-    while True:
+    gameRunning = 0
+
+    while gameRunning == 0:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -566,9 +599,24 @@ if __name__ == '__main__':
                                 pygame.display.update()
 
                                 # AI 
-                                board = agent.move(board)
+                                agentMove = agent.move(board)
+                                if agentMove == "Loss":
+                                    # the human has won
+                                    gameRunning = 1
+                                else:
+                                    agentMove = agentMove[0]
 
-                                drawBoard(board)
+                                if len(agentMove) != 8:
+                                    for mcmoves in range(1, len(agentMove)+1):
+                                        board = agentMove[len(agentMove) - mcmoves]
+                                        drawBoard(board)
+                                        pygame.display.update()
+                                        pygame.time.delay(600)
+                                    errorText = font.render("The computer used a multicapture!", 1, (0,0,0))
+                                    screen.blit(errorText, (20,360))
+                                else:
+                                    board = agentMove
+                                    drawBoard(board)
                             else:
                                 clearBoard(board)
                                 drawBoard(board)
@@ -655,15 +703,51 @@ if __name__ == '__main__':
                         screen.blit(Text, (20,360))
                         pygame.display.update()
                         # AI 
-                        board = agent.move(board)
-                        drawBoard(board)
+                        agentMove = agent.move(board)
+                        if agentMove == "Loss":
+                            # the human has won
+                            gameRunning = 1
+                        else:
+                            agentMove = agentMove[0]
 
+                        if len(agentMove) != 8:
+                            for mcmoves in range(1, len(agentMove)+1):
+                                board = agentMove[len(agentMove) - mcmoves]
+                                drawBoard(board)
+                                pygame.display.update()
+                                pygame.time.delay(600)
+                            errorText = font.render("The computer used a multicapture!", 1, (0,0,0))
+                            screen.blit(errorText, (20,360))
+                        else:
+                            board = agentMove
+                            drawBoard(board)
                     x = -1
                     y = -1 
-
-                       
-                        
-
-
+        loss = True
+        for x in range(0,8):
+            for y in range(0,8):
+                if board[x][y] == 1 or board[x][y] == 4:
+                    loss = False
+        if loss:
+            gameRunning = 2
         clock.tick(30)
         pygame.display.update()
+    
+    ender = False
+    while ender == False:
+        if gameRunning == 1:
+            errorText = font.render("CONGRATULATIONS! YOU WON!", 1, (0,0,0))
+            screen.blit(errorText, (20,360))
+        else:
+            errorText = font.render("THE COMPUTER WINS!", 1, (0,0,0))
+            screen.blit(errorText, (20,360))
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                ender = True
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pygame.quit()
+                ender = True
+
+    ### END
