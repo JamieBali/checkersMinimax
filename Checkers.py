@@ -10,7 +10,6 @@ fontB = pygame.font.SysFont("Arial", 20, bold=True)
 
 
 ### TO DO LIST:
-# - Multi-Capture (Human)
 # - Multi-Capture (AI)
 
 ###
@@ -502,6 +501,8 @@ if __name__ == '__main__':
     board.append([1,0,1,0,1,0,1,0])
     drawBoard(board)
 
+    mcavailable = False
+
     while True:
 
         for event in pygame.event.get():
@@ -518,7 +519,7 @@ if __name__ == '__main__':
 
                    
                     if x >= 0 and x < 8 and y >= 0 and y < 8:
-
+                        wascap = False
                         moved = False
                         if board[x][y] == 3:
                             board[x][y] = board[pastClick[0]][pastClick[1]]
@@ -530,34 +531,62 @@ if __name__ == '__main__':
                             clearBoard(board)
                             temp = x-pastClick[0]
                             if abs(temp) == 2: # this means it was a capture
+                                wascap = True
                                 dx = int((x - pastClick[0])/2)         
                                 dy = int((y - pastClick[1])/2)
                                 if board[x-dx][y-dy] == 5: # this line implements regicide
                                     board[x][y] = 4
                                 board[x-dx][y-dy] = 0
-
-                            # put multicapture here
-
-
-                            pastClick = (-1,-1)
-                            clearBoard(board)
-                            drawBoard(board)
                             moved = True
-                            Text = font.render("I'm thinking...", 1, (0,0,0))
-                            screen.blit(Text, (20,360))
 
-                            pygame.display.update()
+                            mcavailable = False
+                            if wascap:
+                                if (board[x][y] == 4 or board[x][y] == 1) and x > 1:
+                                    if y > 1:
+                                        if (board[x-1][y-1] == 2 or board[x-1][y-1] == 5) and board[x-2][y-2] == 0:
+                                            mcavailable = True
+                                    if y < 6:
+                                        if (board[x-1][y+1] == 2 or board[x-1][y+1] == 5) and board[x-2][y+2] == 0:
+                                            mcavailable = True
+                                if board[x][y] == 4 and x < 6:
+                                    if y > 1:
+                                        if (board[x+1][y-1] == 2 or board[x+1][y-1] == 5) and board[x+2][y-2] == 0:
+                                            mcavailable = True
+                                    if y < 6:
+                                        if (board[x+1][y+1] == 2 or board[x+1][y+1] == 5) and board[x+2][y+2] == 0:
+                                            mcavailable = True
+                            if not mcavailable:
+                                pastClick = (-1,-1)
+                                clearBoard(board)
+                                drawBoard(board)
+                            
+                                Text = font.render("I'm thinking...", 1, (0,0,0))
+                                screen.blit(Text, (20,360))
 
-                            # AI 
-                            board = agent.move(board)
+                                pygame.display.update()
 
-                            drawBoard(board)
+                                # AI 
+                                board = agent.move(board)
+
+                                drawBoard(board)
+                            else:
+                                clearBoard(board)
+                                drawBoard(board)
+                                pygame.display.update()
+
 
                         else:
                             pastClick = (x,y)    
                     
                         clearBoard(board)
                         
+                        if mcavailable:
+                            errorText = font.render("There is a valid multicapture available!", 1, (0,0,0))
+                            screen.blit(errorText, (20,360))
+                            pygame.draw.rect(screen, (220,211,234), (pygame.Rect(340, 340, 40, 40)))
+                            txt = font.render("Skip", 1, (0,0,0))
+                            screen.blit(txt, (341,344))
+                            pygame.display.update()
 
                         if moved == False: # mark valid moves
                             captures = capturesAvailable(board)
@@ -591,9 +620,17 @@ if __name__ == '__main__':
                                         board[x+2][y-2] = 3
                                         valid = True
                             
+                            
                             drawBoard(board) # update the green movement tiles
+                            if mcavailable:
+                                errorText = font.render("There is a valid multicapture available!", 1, (0,0,0))
+                                screen.blit(errorText, (20,360))
+                                pygame.draw.rect(screen, (220,211,234), (pygame.Rect(340, 340, 40, 40)))
+                                txt = font.render("Skip", 1, (0,0,0))
+                                screen.blit(txt, (341,344))
+                                pygame.display.update()
 
-                            if captures == True and valid == False: # and show an error message
+                            if captures == True and valid == False and mcavailable == False: # and show an error message
                                 errorText = font.render("There is a valid capture available!", 1, (0,0,0))
                                 screen.blit(errorText, (20,360))
                                 
@@ -608,9 +645,23 @@ if __name__ == '__main__':
                         drawBoard(board)
                         txt = font.render("Try moving here!", 1, (0,0,0))
                         screen.blit(txt, (20,360))
+                    
+                    elif dy > 340 and dy < 380 and dx > 340 and dx < 380 and mcavailable == True:
+                        mcavailable = False
+                        pastClick = (-1,-1)
+                        clearBoard(board)
+                        drawBoard(board)
+                        Text = font.render("I'm thinking...", 1, (0,0,0))
+                        screen.blit(Text, (20,360))
+                        pygame.display.update()
+                        # AI 
+                        board = agent.move(board)
+                        drawBoard(board)
 
                     x = -1
-                    y = -1    
+                    y = -1 
+
+                       
                         
 
 
