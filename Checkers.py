@@ -236,9 +236,11 @@ def getPossibleMoves(inboard, player, mc = "False", mcfiller = [0]): # for some 
 # with the structure (from, to, ...) where the tuple will increase in size of any multiple captures the AI 
 # performs.
 #
+# The default difficulty of 5 means that it will think 5 moves ahead when looking for a hint for the player.
+#
 ###
 class Agent:
-    def __init__(self, difficulty = 2):
+    def __init__(self, difficulty = 5):
         self.maxDepth = difficulty          # the difficulty refers to how deep the AI will search.
 
     def getBoardValue(self, board):
@@ -258,7 +260,17 @@ class Agent:
                     value += 10         # 5 is an ally king, meaning we want as many of these as possible.
         return value
 
-    
+    ###
+    #
+    # This method runs the actual minimax algorithm.
+    # It is divided into 3 sections:
+    # - The leaf nodes of the tree at the bottom, where the board state values are found
+    # - The middle nodes of the tree in the middle, where comparisons are made
+    # - and the root node of the tree at the top, where no pruning happens and additional comparisons are made to return the optimal move
+    #
+    # Writing the method this way isn't as efficient in terms of lines of code, but has no effect on the speed processing.
+    #
+    ###
     def minimax(self, boardState, player, depth, maxDepth, alpha, beta):
         self.alpha = alpha
         self.beta = beta
@@ -312,7 +324,6 @@ class Agent:
                 else:
                     self.temp, self.alpha = self.agent.minimax(self.moves[self.x][0], (self.player%2)+1, self.depth - 1, self.maxDepth, self.alpha, self.beta)
                 
-                
                 if self.player == 2:                # Max agent
                     if self.temp > self.maxval:
                         self.maxval = self.temp
@@ -363,23 +374,33 @@ class Agent:
     ###
     #
     # The move function will take the board state and run minimax on it to generate an optimal move.
+    # This just means that only 1 variable needs to be passed when calling for the AI to make a move,
+    # instead of having to pass all 6 variables from the main.
     #
     ###
     def move(self, boardState):
         self.boardState = boardState
         stateOfChosen = self.minimax(self.boardState, 2, self.maxDepth, self.maxDepth, -100, 100)
         return stateOfChosen
-
+    
+    ###
+    #
+    # The hint function functions the same as the move function above, but passes a different player number, so that we find the best
+    # move for the human instead of the computer.
+    #
+    ###
     def hint(self, boardState):
         self.boardState = boardState
         self.stateOfChosen = self.minimax(self.boardState, 1, self.maxDepth, self.maxDepth, -100, 100)[0]
         
-        if len(self.stateOfChosen) != 8:
+        if len(self.stateOfChosen) != 8:    # since the hint function will look through multicaptues and possibly return a multicapture
+                                            # we want to filter out the multicapture so we only show the first step of that multiple.
+                                            # This will make it easier for the human player to understand.
             self.stateOfChosen = self.stateOfChosen[len(self.stateOfChosen)-1]
             print(self.stateOfChosen)
 
-        hx = 0
-        hy = 0
+        hx = 0  # hx and hy are the hint coordinates, representing the tile that needs to be moved,
+        hy = 0  # and the for loop below finds the location it is being moved to.
 
         for x in range(0,8):
                 for y in range(0,8):
@@ -388,12 +409,16 @@ class Agent:
                     if self.stateOfChosen[x][y] == 0 and (self.boardState[x][y] == 1 or self.boardState[x][y] == 4):
                         hx = x
                         hy = y
-
-
-
-
+                        
         return self.boardState, hx, hy
+    
+    ### ! END CLASS AGENT
 
+###
+#
+# This function removes all the hints and valid tile markers from the grid.
+#
+###
 def clearBoard(board):
     for i in range(0,8): # clear board
         for j in range(0,8):
@@ -401,6 +426,13 @@ def clearBoard(board):
                                                         # 9 is the suggested hint
                 board[i][j] = 0
 
+###
+#
+# This function actually displays the board.
+#
+# The default values for hx and hy mean that no tiles will be highlighted as hints unless a hint is passed to the function.
+#
+###
 def drawBoard(board, hx = -1, hy = -1):
 
     screen.fill((255,255,255))      # fill screen in white. This also covers the previous drawings so they can be redisplayed correctly
@@ -446,9 +478,15 @@ def drawBoard(board, hx = -1, hy = -1):
             elif board[y][x] == 9:
                 pygame.draw.circle(screen, (0,255,0), ((x*40)+30,(y*40)+30),10) # smaller green circle for hint
 
-    if hx > -1 and hy > -1:
+    if hx > -1 and hy > -1: # if hx and hy are greater than -1, it means that a hint has been passed through.
         pygame.draw.circle(screen, (0,0,128), ((hx*40)+30,(hy*40)+30),15) # blue circle for hint start point
 
+###
+#
+# A smaller version of the availableMoves function that just returns whether or not captures are available.
+# It does not, however, highglight moves if captures are found.
+#
+###
 def capturesAvailable(board):
     captures = False
     for a in range(0,8):            # go through all possible moves to see if a valid capture is available
@@ -471,6 +509,11 @@ def capturesAvailable(board):
                         captures = True
     return captures
 
+###
+#
+# This just displays the title page at the start so the user can select the difficulty they want to play at.
+#
+###
 def drawTitlePage(diff):
     darkSquare = (138,120,93)
     lightSquare = (220,211,234)
@@ -521,8 +564,6 @@ def drawTitlePage(diff):
     pygame.draw.rect(screen, lightSquare, pygame.Rect(100, 300, 200, 50))
     goText = font.render("Let's Play!", 1, (0,0,0))
     screen.blit(goText, (160,312))
-
-### ! END CLASS AGENT
     
 ###
 #
