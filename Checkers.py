@@ -8,6 +8,9 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("Arial", 20)
 fontB = pygame.font.SysFont("Arial", 20, bold=True)
 
+
+### ! BEGIN GLOBAL METHODS
+
 ###
 #
 # When generating the possible moves, we will first look for captures as they must take precedence.
@@ -220,6 +223,9 @@ def getPossibleMoves(inboard, player, mc = "False", mcfiller = [0]): # for some 
                                 newBoardState[i][j] = 0
                                 moves.append([newBoardState, mcfiller])
     return moves
+
+
+### ! END GLOBAL METHODS
 
 ###
 #
@@ -516,6 +522,8 @@ def drawTitlePage(diff):
     goText = font.render("Let's Play!", 1, (0,0,0))
     screen.blit(goText, (160,312))
 
+### ! END CLASS AGENT
+    
 ###
 #
 # Main function. Takes no inputs.
@@ -735,7 +743,7 @@ if __name__ == '__main__':
                         txt = font.render("Try moving here!", 1, (0,0,0))               # this hint will just show where the best move would end up
                         screen.blit(txt, (20,360))
                     
-                    elif dy > 340 and dy < 380 and dx > 340 and dx < 380 and mcavailable == True:   # this is the skip button, but only if it is showing
+                    elif dy > 340 and dy < 380 and dx > 340 and dx < 380 and mcavailable == True:   # this is the skip button, but it will only function if multicaptures are available.
                         mcavailable = False
                         pastClick = (-1,-1)
                         clearBoard(board)
@@ -776,7 +784,7 @@ if __name__ == '__main__':
         pygame.display.update()
     
     
-    ender = False
+    ender = False # variable to wait for the user to click anywhere to close the game
     
     while ender == False:
         if gameRunning == 1:
@@ -794,4 +802,6 @@ if __name__ == '__main__':
                 pygame.quit()
                 ender = True
 
-    ### END
+    ### END CLASS MAIN
+    
+ # END
