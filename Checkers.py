@@ -242,7 +242,13 @@ def getPossibleMoves(inboard, player, mc = "False", mcfiller = [0]): # for some 
 class Agent:
     def __init__(self, difficulty = 5):
         self.maxDepth = difficulty          # the difficulty refers to how deep the AI will search.
-
+    
+    ###
+    #
+    # This function calculates the value of the board based on a hueristic.
+    # A positive value means the AI is winning, and a negative value means the AI is losing.
+    #
+    ###
     def getBoardValue(self, board):
         value = 0
         while len(board) != 8:  # only gets the most up to date version of the board
