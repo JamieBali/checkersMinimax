@@ -14,5 +14,7 @@ Alternatively, the file can be run through the command line, but this will requi
 installed using the commands below.
 
 > pip install pygame
+
 > pip install numpy
+ 
 > python <filepath>/Checkers.py
