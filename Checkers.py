@@ -366,12 +366,27 @@ class Agent:
 
     def hint(self, boardState):
         self.boardState = boardState
-        self.stateOfChosen = self.minimax(self.boardState, 1, self.maxDepth, self.maxDepth, -100, 100)
+        self.stateOfChosen = self.minimax(self.boardState, 1, self.maxDepth, self.maxDepth, -100, 100)[0]
+        
+        if len(self.stateOfChosen) != 8:
+            self.stateOfChosen = self.stateOfChosen[len(self.stateOfChosen)-1]
+            print(self.stateOfChosen)
+
+        hx = 0
+        hy = 0
+
         for x in range(0,8):
-            for y in range(0,8):
-                if (self.stateOfChosen[x][y] == 1 or self.stateOfChosen[x][y] == 4) and self.boardState[x][y] == 0:
-                    self.boardState[x][y] = 9   # we are using 9 to mark the suggested move.
-        return self.boardState
+                for y in range(0,8):
+                    if (self.stateOfChosen[x][y] == 1 or self.stateOfChosen[x][y] == 4) and self.boardState[x][y] == 0:
+                        self.boardState[x][y] = 9   # we are using 9 to mark the suggested move.
+                    if self.stateOfChosen[x][y] == 0 and (self.boardState[x][y] == 1 or self.boardState[x][y] == 4):
+                        hx = x
+                        hy = y
+
+
+
+
+        return self.boardState, hx, hy
 
 def clearBoard(board):
     for i in range(0,8): # clear board
@@ -380,7 +395,7 @@ def clearBoard(board):
                                                         # 9 is the suggested hint
                 board[i][j] = 0
 
-def drawBoard(board):
+def drawBoard(board, hx = -1, hy = -1):
 
     screen.fill((255,255,255))      # fill screen in white. This also covers the previous drawings so they can be redisplayed correctly
     
@@ -423,7 +438,10 @@ def drawBoard(board):
                 king = fontB.render("!", 1, (225,225,225))
                 screen.blit(king, ((x*40)+27,(y*40)+19))
             elif board[y][x] == 9:
-                pygame.draw.circle(screen, (0,0,128), ((x*40)+30,(y*40)+30),10) # smaller blue circle for hint
+                pygame.draw.circle(screen, (0,255,0), ((x*40)+30,(y*40)+30),10) # smaller green circle for hint
+
+    if hx > -1 and hy > -1:
+        pygame.draw.circle(screen, (0,0,128), ((hx*40)+30,(hy*40)+30),15) # blue circle for hint start point
 
 def capturesAvailable(board):
     captures = False
@@ -512,7 +530,7 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                break
+                exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:                  
                 if pygame.mouse.get_pressed()[0]:                       # if player right clicks on a button, difficulty changes
                     x, y = pygame.mouse.get_pos()
@@ -531,9 +549,9 @@ if __name__ == '__main__':
                             difficulty = 5
                         elif x > 310 and x < 350:
                             difficulty = 6
-
-        clock.tick(30)
-        pygame.display.update()        
+            clock.tick(30)
+            pygame.display.update()   
+             
 
     # the difficulty is the selected value +2, as thinking only 1 move ahead would be too easy at the start, and we want difficulty to scale linearly
     difficulty = difficulty + 2
@@ -563,7 +581,7 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                break
+                exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if pygame.mouse.get_pressed()[0]: # confirm that it is a left click.
                     dy, dx = pygame.mouse.get_pos()
@@ -648,9 +666,9 @@ if __name__ == '__main__':
 
                         else:   
                             pastClick = (x,y)    
-                    
+
                         clearBoard(board)
-                        
+
                         if mcavailable:         
                             errorText = font.render("There is a valid multicapture available!", 1, (0,0,0))
                             screen.blit(errorText, (20,360))
@@ -712,8 +730,8 @@ if __name__ == '__main__':
                         txt = font.render("Let's have a look for you!", 1, (0,0,0))     # anounce that it is searching
                         screen.blit(txt, (20,360))
                         pygame.display.update()
-                        board = agent.hint(board)
-                        drawBoard(board)
+                        board, hx, hy = agent.hint(board)
+                        drawBoard(board, hy, hx)
                         txt = font.render("Try moving here!", 1, (0,0,0))               # this hint will just show where the best move would end up
                         screen.blit(txt, (20,360))
                     
@@ -757,7 +775,9 @@ if __name__ == '__main__':
         clock.tick(30)
         pygame.display.update()
     
+    
     ender = False
+    
     while ender == False:
         if gameRunning == 1:
             errorText = font.render("CONGRATULATIONS! YOU WON!", 1, (0,0,0))    # announce victory or loss
